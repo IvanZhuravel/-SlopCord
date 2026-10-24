@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { detectLang, strings, type Lang } from "./i18n";
 import { AuthScreen, ProfileCard } from "./Auth";
+import { fetchVoiceToken, RoomList, useRooms, usePresence, type Presence, type Room } from "./Rooms";
 import { JoinServer, ServerCard, useServers } from "./Server";
 import { supabase, useProfile, useSession } from "./supabase";
 import { useUpdater } from "./updater";
+import { TokenSource } from "livekit-client";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
 
 // Small per-device preferences. Losing them is harmless, so storage errors are ignored.
@@ -95,6 +97,25 @@ export default function App() {
   const [savedServerId, setServerId] = usePref("serverId", "");
   const server = servers?.find((s) => s.id === savedServerId) ?? servers?.[0];
   const noServer = servers !== null && servers.length === 0;
+  const rooms = useRooms(server?.id);
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const currentRoomId = inCall || voice.status === "connecting" ? (currentRoom?.id ?? null) : null;
+  const me: Presence | null =
+    userId && profile
+      ? {
+          user_id: userId,
+          name: profile.display_name,
+          avatar_path: profile.avatar_path,
+          room_id: currentRoomId,
+          muted: voice.micMuted,
+        }
+      : null;
+  const everyone = usePresence(server?.id, me);
+  // In our rooms the LiveKit identity is the user id, so the call tells who is talking right now.
+  const speaking = useMemo(
+    () => new Set(voice.peers.filter((p) => p.speaking && !p.micMuted).map((p) => p.identity)),
+    [voice.peers],
+  );
 
   // Signing out ends the call too.
   useEffect(() => {
@@ -105,21 +126,46 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const join = () => {
+  const voiceOptions = {
+    thresholdDb,
+    inputDeviceId: inputId || undefined,
+    outputDeviceId: outputId || undefined,
+  };
+
+  // Stage 0 path without Supabase: LiveKit's development token server, any room name.
+  const joinDev = () => {
     if (!voiceName.trim() || !roomName.trim() || !tokenServerId.trim()) {
       setFormError(true);
       return;
     }
     setFormError(false);
+    const source = TokenSource.developmentTokenServer(tokenServerId.trim());
     void session.join({
-      name: voiceName.trim(),
-      roomName: roomName.trim(),
-      tokenServerId: tokenServerId.trim(),
-      thresholdDb,
-      inputDeviceId: inputId || undefined,
-      outputDeviceId: outputId || undefined,
+      fetchToken: () =>
+        source.fetch({
+          roomName: roomName.trim(),
+          participantName: voiceName.trim(),
+          participantIdentity: `${voiceName.trim()}-${crypto.randomUUID().slice(0, 8)}`,
+        }),
+      ...voiceOptions,
     });
   };
+
+  // Our rooms: the livekit-token function checks you are on the server and the room has space.
+  const joinRoom = async (room: Room) => {
+    if (inCall) await session.leave();
+    setCurrentRoom(room);
+    void session.join({ fetchToken: () => fetchVoiceToken(room.id), ...voiceOptions });
+  };
+
+  const voiceError =
+    voice.error === "mic"
+      ? t.errorMic
+      : voice.errorDetail === "room_full"
+        ? t.roomFull
+        : voice.errorDetail === "no_access"
+          ? t.errorNoAccess
+          : t.errorConnect;
 
   const onThreshold = (db: number) => {
     setThresholdDb(db);
@@ -196,20 +242,33 @@ export default function App() {
         <ServerCard key={server.id} t={t} server={server} userId={userId} onLeft={() => void reloadServers()} />
       )}
 
-      {!needsSignIn && !noServer && !inCall && (
+      {userId && server && (
+        <RoomList
+          t={t}
+          serverId={server.id}
+          isOwner={server.owner_id === userId}
+          rooms={rooms}
+          everyone={everyone}
+          currentRoomId={currentRoomId}
+          speaking={speaking}
+          busy={voice.status === "connecting"}
+          onJoin={(room) => void joinRoom(room)}
+        />
+      )}
+      {supabase && voice.error && <p className="error">{voiceError}</p>}
+
+      {!supabase && !inCall && (
         <form
           className="card"
           onSubmit={(e) => {
             e.preventDefault();
-            join();
+            joinDev();
           }}
         >
-          {!supabase && (
-            <label>
-              {t.yourName}
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
-            </label>
-          )}
+          <label>
+            {t.yourName}
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
+          </label>
           <label>
             {t.roomName}
             <input value={roomName} onChange={(e) => setRoomName(e.target.value)} maxLength={64} />
@@ -243,7 +302,7 @@ export default function App() {
         <section className="card">
           {voice.status === "reconnecting" && <p className="warn">{t.reconnecting}</p>}
           <h2>
-            {t.participants} · {roomName}
+            {t.participants} · {supabase ? currentRoom?.name : roomName}
           </h2>
           <ul className="peers">
             {voice.peers.map((p) => (

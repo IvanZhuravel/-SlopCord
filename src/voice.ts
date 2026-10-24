@@ -8,7 +8,6 @@ import {
   Room,
   RoomEvent,
   Track,
-  TokenSource,
 } from "livekit-client";
 import { VoiceGateProcessor } from "./voiceGate";
 
@@ -33,10 +32,11 @@ export type VoiceState = {
   errorDetail?: string;
 };
 
+export type VoiceToken = { serverUrl: string; participantToken: string };
+
 export type JoinOptions = {
-  tokenServerId: string;
-  roomName: string;
-  name: string;
+  /** Asks our server (or, without Supabase, LiveKit's dev token server) for permission to enter. */
+  fetchToken: () => Promise<VoiceToken>;
   thresholdDb: number;
   inputDeviceId?: string;
   outputDeviceId?: string;
@@ -87,12 +87,7 @@ export class VoiceSession {
     this.bindEvents(room);
 
     try {
-      const source = TokenSource.developmentTokenServer(opts.tokenServerId);
-      const { serverUrl, participantToken } = await source.fetch({
-        roomName: opts.roomName,
-        participantName: opts.name,
-        participantIdentity: `${opts.name}-${crypto.randomUUID().slice(0, 8)}`,
-      });
+      const { serverUrl, participantToken } = await opts.fetchToken();
       await room.connect(serverUrl, participantToken, { autoSubscribe: true });
     } catch (e) {
       await this.fail("connect", e);
