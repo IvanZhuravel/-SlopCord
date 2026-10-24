@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { detectLang, strings, type Lang } from "./i18n";
 import { AuthScreen, ProfileCard } from "./Auth";
+import { JoinServer, ServerCard, useServers } from "./Server";
 import { supabase, useProfile, useSession } from "./supabase";
 import { useUpdater } from "./updater";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
@@ -89,6 +90,11 @@ export default function App() {
   // With Supabase configured you sign in and your profile name is used; without it, the stage 0 name field stays.
   const needsSignIn = supabase !== null && !authSession;
   const voiceName = profile?.display_name ?? name;
+  const userId = authSession?.user.id;
+  const { servers, reload: reloadServers } = useServers(userId);
+  const [savedServerId, setServerId] = usePref("serverId", "");
+  const server = servers?.find((s) => s.id === savedServerId) ?? servers?.[0];
+  const noServer = servers !== null && servers.length === 0;
 
   // Signing out ends the call too.
   useEffect(() => {
@@ -166,7 +172,31 @@ export default function App() {
 
       {needsSignIn && authSession === null && <AuthScreen t={t} lang={lang} />}
 
-      {!needsSignIn && !inCall && (
+      {userId && noServer && (
+        <JoinServer
+          t={t}
+          onJoined={(id) => {
+            setServerId(id);
+            void reloadServers();
+          }}
+        />
+      )}
+
+      {userId && servers && servers.length > 1 && (
+        <select aria-label={t.server} value={server?.id} onChange={(e) => setServerId(e.target.value)}>
+          {servers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {userId && server && (
+        <ServerCard key={server.id} t={t} server={server} userId={userId} onLeft={() => void reloadServers()} />
+      )}
+
+      {!needsSignIn && !noServer && !inCall && (
         <form
           className="card"
           onSubmit={(e) => {

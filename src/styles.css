@@ -77,3 +77,15 @@ img.avatar { object-fit: cover; }
 .profile-row { display: flex; align-items: flex-end; gap: 12px; }
 .avatar-button { background: none; padding: 0; border-radius: 50%; }
 .grow { flex: 1; }
+
+.inline-form { display: flex; gap: 8px; }
+.inline-form input { flex: 1; min-width: 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-head h2 { margin: 0; }
+.invites { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.invites li { display: flex; align-items: center; gap: 8px; }
+.invites code { font-size: 15px; letter-spacing: 1px; }
+.invites small { flex: 1; }
+.invites button { padding: 4px 8px; }
+button.link { background: none; color: var(--muted); padding: 2px 4px; font-size: 12px; }
+button.link:hover { color: var(--danger); }
