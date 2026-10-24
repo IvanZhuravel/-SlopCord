@@ -1,0 +1,71 @@
+// All UI strings live here. No i18n library: two languages fit in one small file.
+export type Lang = "uk" | "en";
+
+const uk = {
+  appTitle: "SlopCord",
+  yourName: "Твоє імʼя",
+  roomName: "Кімната",
+  tokenServerId: "Token server ID з LiveKit Cloud",
+  tokenServerHint: "LiveKit Cloud → Settings → Development token server",
+  join: "Зайти в кімнату",
+  joining: "Підключаюсь…",
+  leave: "Вийти",
+  mute: "Вимкнути мікрофон",
+  unmute: "Увімкнути мікрофон",
+  deafen: "Вимкнути звук",
+  undeafen: "Увімкнути звук",
+  participants: "Учасники",
+  you: "ти",
+  muted: "мікрофон вимкнено",
+  transmitting: "Тебе чути",
+  silent: "Тиша",
+  sensitivity: "Чутливість голосової активації",
+  sensitivityHint: "Тягни вліво, якщо тебе обрізає; вправо, якщо ловить фоновий шум.",
+  microphone: "Мікрофон",
+  speakers: "Навушники / динаміки",
+  defaultDevice: "За замовчуванням",
+  language: "Мова",
+  reconnecting: "Звʼязок перервався, перепідключаюсь…",
+  errorMic: "Немає доступу до мікрофона. Дозволь його в налаштуваннях Windows.",
+  errorConnect: "Не вдалося підключитися",
+  fillAll: "Заповни всі поля",
+  alone: "Поки що тут лише ти. Скинь другу назву кімнати.",
+};
+
+const en: typeof uk = {
+  appTitle: "SlopCord",
+  yourName: "Your name",
+  roomName: "Room",
+  tokenServerId: "LiveKit Cloud token server ID",
+  tokenServerHint: "LiveKit Cloud → Settings → Development token server",
+  join: "Join room",
+  joining: "Connecting…",
+  leave: "Leave",
+  mute: "Mute mic",
+  unmute: "Unmute mic",
+  deafen: "Deafen",
+  undeafen: "Undeafen",
+  participants: "Participants",
+  you: "you",
+  muted: "mic muted",
+  transmitting: "You are heard",
+  silent: "Silent",
+  sensitivity: "Voice activation sensitivity",
+  sensitivityHint: "Drag left if your voice gets cut off; right if it picks up background noise.",
+  microphone: "Microphone",
+  speakers: "Headphones / speakers",
+  defaultDevice: "Default",
+  language: "Language",
+  reconnecting: "Connection lost, reconnecting…",
+  errorMic: "No microphone access. Allow it in Windows settings.",
+  errorConnect: "Could not connect",
+  fillAll: "Fill in all fields",
+  alone: "It's just you for now. Send a friend the room name.",
+};
+
+export type Strings = typeof uk;
+export const strings: Record<Lang, Strings> = { uk, en };
+
+export function detectLang(): Lang {
+  return navigator.language.toLowerCase().startsWith("uk") ? "uk" : "en";
+}
