@@ -30,6 +30,9 @@ jobs:
           # Built into the app so friends do not have to type it. Set it under
           # Settings -> Secrets and variables -> Actions. Empty: the app asks for it.
           VITE_LIVEKIT_TOKEN_SERVER_ID: ${{ secrets.LIVEKIT_TOKEN_SERVER_ID }}
+          # Public by design; set under Settings -> Secrets and variables -> Actions -> Variables.
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
 
       - uses: actions/upload-artifact@v4
         with:

@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.livekit.cloud wss://*.livekit.cloud https://cloud-api.livekit.io; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: mediastream:",
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.livekit.cloud wss://*.livekit.cloud https://cloud-api.livekit.io https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: mediastream:",
       "devCsp": null
     }
   },
