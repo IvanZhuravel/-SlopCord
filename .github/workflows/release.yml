@@ -1,10 +1,16 @@
 name: Release
 
-# Push a tag like v0.2.0 to publish a signed installer and latest.json,
-# which installed apps read to offer the "Update" button.
+# Push a tag like v0.2.0, or run this workflow from the Actions tab with a
+# version, to publish a signed installer and latest.json, which installed
+# apps read to offer the "Update" button.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the v, for example 0.2.0"
+        required: true
 
 permissions:
   contents: write
@@ -28,10 +34,15 @@ jobs:
 
       - run: npm ci
 
-      # The app version comes from package.json, so the tag decides it.
-      - name: Set version from tag
+      # The app version comes from package.json, so the tag (or the input) decides it.
+      - name: Set version
         shell: bash
-        run: npm pkg set version="${GITHUB_REF_NAME#v}"
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          npm pkg set version="$VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -40,8 +51,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           VITE_LIVEKIT_TOKEN_SERVER_ID: ${{ secrets.LIVEKIT_TOKEN_SERVER_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: SlopCord ${{ github.ref_name }}
+          # Run from the Actions tab, this creates the tag on the current commit.
+          tagName: v${{ env.VERSION }}
+          releaseName: SlopCord v${{ env.VERSION }}
           releaseBody: Завантаж SlopCord_*_x64-setup.exe і запусти. Якщо застосунок уже стоїть, він сам запропонує оновитися.
           releaseDraft: false
           prerelease: false
