@@ -53,9 +53,13 @@ export function useRooms(serverId: string | undefined) {
     void reload();
     const channel = supabase
       .channel(`rooms:${serverId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `server_id=eq.${serverId}` }, () => {
-        void reload();
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms", filter: `server_id=eq.${serverId}` },
+        () => {
+          void reload();
+        },
+      )
       .subscribe();
     return () => {
       void supabase?.removeChannel(channel);
@@ -106,9 +110,11 @@ export function RoomList({
   rooms,
   everyone,
   currentRoomId,
+  selectedRoomId,
   speaking,
   busy,
   onJoin,
+  onSelect,
 }: {
   t: Strings;
   serverId: string;
@@ -116,9 +122,11 @@ export function RoomList({
   rooms: Room[];
   everyone: Presence[];
   currentRoomId: string | null;
+  selectedRoomId: string | null;
   speaking: Set<string>;
   busy: boolean;
   onJoin: (room: Room) => void;
+  onSelect: (room: Room) => void;
 }) {
   const [newName, setNewName] = useState("");
   const [error, setError] = useState("");
@@ -156,19 +164,28 @@ export function RoomList({
         {rooms.map((room) => {
           const here = everyone.filter((p) => p.room_id === room.id);
           return (
-            <li key={room.id} className={room.id === currentRoomId ? "current" : ""}>
+            <li
+              key={room.id}
+              className={[room.id === currentRoomId && "current", room.id === selectedRoomId && "selected"]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <div className="room-row">
                 <button
                   type="button"
                   className="room-name"
-                  onClick={() => onJoin(room)}
+                  onClick={() => onSelect(room)}
                   onDoubleClick={() => void rename(room)}
-                  disabled={busy || room.id === currentRoomId}
                   title={t.roomHint}
                 >
                   # {room.name}
                   {here.length > 0 && <small> · {here.length}/10</small>}
                 </button>
+                {room.id !== currentRoomId && (
+                  <button type="button" onClick={() => onJoin(room)} disabled={busy} title={t.join}>
+                    {t.joinVoice}
+                  </button>
+                )}
                 {isOwner && rooms.length > 1 && (
                   <button type="button" className="link" onClick={() => void remove(room)} title={t.deleteRoom}>
                     ×
