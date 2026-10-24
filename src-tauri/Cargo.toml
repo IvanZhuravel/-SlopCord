@@ -1,6 +1,6 @@
 [package]
 name = "slopcord"
-version = "0.0.1"
+version = "0.1.0"
 description = "SlopCord voice chat"
 edition = "2021"
 
@@ -13,6 +13,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 
 # Small and fast release binary: the app must not get in the way of games.
 [profile.release]

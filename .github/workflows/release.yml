@@ -1,0 +1,49 @@
+name: Release
+
+# Push a tag like v0.2.0 to publish a signed installer and latest.json,
+# which installed apps read to offer the "Update" button.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # The app version comes from package.json, so the tag decides it.
+      - name: Set version from tag
+        shell: bash
+        run: npm pkg set version="${GITHUB_REF_NAME#v}"
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_LIVEKIT_TOKEN_SERVER_ID: ${{ secrets.LIVEKIT_TOKEN_SERVER_ID }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: SlopCord ${{ github.ref_name }}
+          releaseBody: Завантаж SlopCord_*_x64-setup.exe і запусти. Якщо застосунок уже стоїть, він сам запропонує оновитися.
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          args: --config src-tauri/tauri.release.conf.json

@@ -61,3 +61,11 @@ button.danger { background: var(--danger); }
 
 .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 .controls button { flex: 1; }
+
+.update-banner {
+  background: var(--accent); border-radius: 8px; padding: 8px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.update-banner button.primary { background: var(--text); color: var(--accent); font-weight: 600; }
+.update-banner small, .update-banner .error { color: var(--text); opacity: 0.9; }
+.version-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); }

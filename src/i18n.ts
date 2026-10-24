@@ -30,6 +30,16 @@ const uk = {
   errorConnect: "Не вдалося підключитися",
   fillAll: "Заповни всі поля",
   alone: "Поки що тут лише ти. Скинь другу назву кімнати.",
+  updateAvailable: "Доступна нова версія",
+  updateNow: "Оновити",
+  updateAfterCall: "Онови після виходу з кімнати",
+  updateDownloading: "Завантажую оновлення…",
+  updateFailed: "Не вдалося оновитися. Спробуй пізніше.",
+  updateRetry: "Ще раз",
+  version: "Версія",
+  checkUpdates: "Перевірити оновлення",
+  checking: "Перевіряю…",
+  upToDate: "У тебе остання версія",
 };
 
 const en: typeof uk = {
@@ -61,6 +71,16 @@ const en: typeof uk = {
   errorConnect: "Could not connect",
   fillAll: "Fill in all fields",
   alone: "It's just you for now. Send a friend the room name.",
+  updateAvailable: "New version available",
+  updateNow: "Update",
+  updateAfterCall: "Update after you leave the room",
+  updateDownloading: "Downloading update…",
+  updateFailed: "Update failed. Try again later.",
+  updateRetry: "Retry",
+  version: "Version",
+  checkUpdates: "Check for updates",
+  checking: "Checking…",
+  upToDate: "You have the latest version",
 };
 
 export type Strings = typeof uk;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { detectLang, strings, type Lang } from "./i18n";
+import { useUpdater } from "./updater";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
 
 // Small per-device preferences. Losing them is harmless, so storage errors are ignored.
@@ -79,6 +80,8 @@ export default function App() {
   const inCall = voice.status === "connected" || voice.status === "reconnecting";
   // Device labels only appear after mic permission, so re-list once we are in a call.
   const { inputs, outputs, unlock } = useDevices(inCall);
+  const updater = useUpdater();
+  const upd = updater.state;
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -119,6 +122,35 @@ export default function App() {
           <option value="en">English</option>
         </select>
       </header>
+
+      {upd.kind === "available" && (
+        <div className="update-banner">
+          <span>
+            {t.updateAvailable}: {upd.version}
+          </span>
+          {inCall ? (
+            <small>{t.updateAfterCall}</small>
+          ) : (
+            <button className="primary" onClick={() => void updater.install()}>
+              {t.updateNow}
+            </button>
+          )}
+        </div>
+      )}
+      {upd.kind === "downloading" && (
+        <div className="update-banner">
+          <span>
+            {t.updateDownloading}
+            {upd.percent !== undefined && ` ${upd.percent}%`}
+          </span>
+        </div>
+      )}
+      {upd.kind === "error" && upd.version && (
+        <div className="update-banner">
+          <span className="error">{t.updateFailed}</span>
+          {!inCall && <button onClick={() => void updater.install()}>{t.updateRetry}</button>}
+        </div>
+      )}
 
       {!inCall && (
         <form
@@ -234,6 +266,19 @@ export default function App() {
             ))}
           </select>
         </label>
+        <div className="version-row">
+          <span>
+            {t.version} {updater.currentVersion}
+            {upd.kind === "latest" && <small> · {t.upToDate}</small>}
+            {upd.kind === "error" && !upd.version && <small> · {t.updateFailed}</small>}
+          </span>
+          <button
+            onClick={() => void updater.check()}
+            disabled={upd.kind === "checking" || upd.kind === "downloading"}
+          >
+            {upd.kind === "checking" ? t.checking : t.checkUpdates}
+          </button>
+        </div>
       </section>
     </main>
   );
