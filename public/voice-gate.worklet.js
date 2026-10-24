@@ -3,6 +3,7 @@
 // While closed it outputs pure silence, which lets Opus DTX send almost nothing.
 
 const HOLD_SECONDS = 0.4; // keep the gate open this long after the voice drops
+const PTT_TAIL_SECONDS = 0.2; // and this long after the push-to-talk key is released, so last words are not cut
 const FADE_SECONDS = 0.005; // short fade to avoid clicks when opening and closing
 
 class VoiceGate extends AudioWorkletProcessor {
@@ -13,8 +14,13 @@ class VoiceGate extends AudioWorkletProcessor {
     this.holdLeft = 0;
     this.gain = 0;
     this.fadeStep = 1 / (FADE_SECONDS * sampleRate);
+    // "voice": opens on sound above the threshold. "ptt": opens only while the key is held.
+    this.mode = "voice";
+    this.pttDown = false;
     this.port.onmessage = (e) => {
       if (typeof e.data.thresholdDb === "number") this.thresholdDb = e.data.thresholdDb;
+      if (e.data.mode === "voice" || e.data.mode === "ptt") this.mode = e.data.mode;
+      if (typeof e.data.pttDown === "boolean") this.pttDown = e.data.pttDown;
     };
   }
 
@@ -26,14 +32,15 @@ class VoiceGate extends AudioWorkletProcessor {
       return true;
     }
 
-    let sum = 0;
-    for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
-    const db = 10 * Math.log10(sum / input.length + 1e-12);
-
-    if (db > this.thresholdDb) {
-      this.holdLeft = HOLD_SECONDS * sampleRate;
+    if (this.mode === "ptt") {
+      if (this.pttDown) this.holdLeft = PTT_TAIL_SECONDS * sampleRate;
+      else this.holdLeft -= input.length;
     } else {
-      this.holdLeft -= input.length;
+      let sum = 0;
+      for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+      const db = 10 * Math.log10(sum / input.length + 1e-12);
+      if (db > this.thresholdDb) this.holdLeft = HOLD_SECONDS * sampleRate;
+      else this.holdLeft -= input.length;
     }
     const shouldOpen = this.holdLeft > 0;
     if (shouldOpen !== this.open) {

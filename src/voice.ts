@@ -3,13 +3,14 @@ import {
   DisconnectReason,
   LocalAudioTrack,
   Participant,
+  RemoteParticipant,
   RemoteTrack,
   RemoteTrackPublication,
   Room,
   RoomEvent,
   Track,
 } from "livekit-client";
-import { VoiceGateProcessor } from "./voiceGate";
+import { VoiceGateProcessor, type GateMode } from "./voiceGate";
 
 export type Peer = {
   identity: string;
@@ -38,6 +39,9 @@ export type JoinOptions = {
   /** Asks our server (or, without Supabase, LiveKit's dev token server) for permission to enter. */
   fetchToken: () => Promise<VoiceToken>;
   thresholdDb: number;
+  mode: GateMode;
+  /** 0..1 per participant identity; everyone else plays at full volume. */
+  volumes: Record<string, number>;
   inputDeviceId?: string;
   outputDeviceId?: string;
 };
@@ -59,6 +63,7 @@ export class VoiceSession {
   // so keep our own handle on each element to remove it.
   private audioEls = new Map<RemoteTrack, HTMLMediaElement>();
   private state: VoiceState = initialVoiceState;
+  private volumes: Record<string, number> = {};
 
   constructor(private onChange: (s: VoiceState) => void) {
     this.audioSink.hidden = true;
@@ -68,6 +73,7 @@ export class VoiceSession {
   async join(opts: JoinOptions) {
     if (this.room) return;
     this.set({ ...initialVoiceState, status: "connecting" });
+    this.volumes = { ...opts.volumes };
 
     const room = new Room({
       adaptiveStream: false,
@@ -99,6 +105,7 @@ export class VoiceSession {
       const track = pub?.track;
       if (track instanceof LocalAudioTrack) {
         this.gate = new VoiceGateProcessor(opts.thresholdDb, (open) => this.set({ transmitting: open }));
+        this.gate.setMode(opts.mode);
         await track.setProcessor(this.gate);
       }
     } catch (e) {
@@ -140,6 +147,19 @@ export class VoiceSession {
     this.gate?.setThreshold(db);
   }
 
+  setMode(mode: GateMode) {
+    this.gate?.setMode(mode);
+  }
+
+  setPttDown(down: boolean) {
+    this.gate?.setPttDown(down);
+  }
+
+  setPeerVolume(identity: string, volume: number) {
+    this.volumes[identity] = volume;
+    this.room?.remoteParticipants.get(identity)?.setVolume(volume);
+  }
+
   async switchDevice(kind: "audioinput" | "audiooutput", deviceId: string) {
     await this.room?.switchActiveDevice(kind, deviceId);
   }
@@ -154,13 +174,15 @@ export class VoiceSession {
   private bindEvents(room: Room) {
     const refresh = () => this.refreshPeers();
     room
-      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, pub: RemoteTrackPublication) => {
+      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, pub: RemoteTrackPublication, p: RemoteParticipant) => {
         if (track.kind !== Track.Kind.Audio) return;
         if (this.state.deafened) {
           pub.setSubscribed(false);
           return;
         }
         const el = track.attach();
+        const volume = this.volumes[p.identity];
+        if (volume !== undefined) p.setVolume(volume);
         this.audioEls.set(track, el);
         this.audioSink.appendChild(el);
       })
