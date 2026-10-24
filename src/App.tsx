@@ -58,11 +58,16 @@ function useDevices(refreshKey: unknown) {
   };
 }
 
+// Baked in at build time from the LIVEKIT_TOKEN_SERVER_ID repository secret,
+// so friends only install and talk. Without it the app asks for the ID.
+const BUILT_IN_TOKEN_SERVER_ID = (import.meta.env.VITE_LIVEKIT_TOKEN_SERVER_ID ?? "").trim();
+
 export default function App() {
   const [lang, setLang] = usePref<Lang>("lang", detectLang());
   const [name, setName] = usePref("name", "");
   const [roomName, setRoomName] = usePref("room", "general");
-  const [tokenServerId, setTokenServerId] = usePref("tokenServerId", "");
+  const [savedTokenServerId, setTokenServerId] = usePref("tokenServerId", "");
+  const tokenServerId = BUILT_IN_TOKEN_SERVER_ID || savedTokenServerId;
   const [thresholdDb, setThresholdDb] = usePref("thresholdDb", -50);
   const [inputId, setInputId] = usePref("inputId", "");
   const [outputId, setOutputId] = usePref("outputId", "");
@@ -131,16 +136,18 @@ export default function App() {
             {t.roomName}
             <input value={roomName} onChange={(e) => setRoomName(e.target.value)} maxLength={64} />
           </label>
-          <label>
-            {t.tokenServerId}
-            <input
-              value={tokenServerId}
-              onChange={(e) => setTokenServerId(e.target.value)}
-              spellCheck={false}
-              autoComplete="off"
-            />
-            <small>{t.tokenServerHint}</small>
-          </label>
+          {!BUILT_IN_TOKEN_SERVER_ID && (
+            <label>
+              {t.tokenServerId}
+              <input
+                value={tokenServerId}
+                onChange={(e) => setTokenServerId(e.target.value)}
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <small>{t.tokenServerHint}</small>
+            </label>
+          )}
           {formError && <p className="error">{t.fillAll}</p>}
           {voice.error && (
             <p className="error">

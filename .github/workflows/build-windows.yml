@@ -26,6 +26,10 @@ jobs:
       - run: npm ci
 
       - run: npx tauri build
+        env:
+          # Built into the app so friends do not have to type it. Set it under
+          # Settings -> Secrets and variables -> Actions. Empty: the app asks for it.
+          VITE_LIVEKIT_TOKEN_SERVER_ID: ${{ secrets.LIVEKIT_TOKEN_SERVER_ID }}
 
       - uses: actions/upload-artifact@v4
         with:
