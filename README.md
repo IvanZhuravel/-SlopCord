@@ -70,7 +70,14 @@ Workflow **Release** збирає інсталятор, підписує йог�
 
 Для розгортання потрібні секрети `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` і `SUPABASE_DB_PASSWORD`. Поки їх немає, розгортання пропускається з попередженням.
 
-Один раз вручну: у Supabase відкрий **Authentication → Sign In / Providers → Email** і вимкни **Confirm email**. На сервер однаково потрапляєш лише за кодом запрошення.
+Один раз вручну: у Supabase відкрий **Authentication → Sign In / Providers → Email** і вимкни **Confirm email**.
+
+Щоб застосунок знав, до якого проєкту Supabase підключатися, додай у **Settings → Secrets and variables → Actions → Variables** дві змінні (вони не секретні):
+
+- `SUPABASE_URL` — Project URL з **Project Settings → API**;
+- `SUPABASE_ANON_KEY` — ключ `anon public` звідти ж.
+
+Поки їх немає, застосунок працює як прототип етапу 0: без входу, з полем для імені. На сервер однаково потрапляєш лише за кодом запрошення.
 
 ## Для розробки
 
@@ -90,6 +97,7 @@ npm run tauri build   # інсталятор у src-tauri/target/release/bundle/
 | `src/voiceGate.ts`, `public/voice-gate.worklet.js` | Голосова активація. Працює в аудіопотоці, тож не залежить від того, згорнуте вікно чи ні |
 | `src/App.tsx` | Увесь інтерфейс |
 | `src/updater.ts` | Перевірка й встановлення оновлень |
+| `src/supabase.ts`, `src/Auth.tsx` | Підключення до Supabase, вхід, реєстрація, профіль і аватар |
 | `src/i18n.ts` | Тексти українською та англійською |
 | `src-tauri/` | Оболонка Tauri (Rust) |
 | `supabase/migrations/` | Таблиці, правила доступу (RLS), сховища файлів |

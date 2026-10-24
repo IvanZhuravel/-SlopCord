@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { detectLang, strings, type Lang } from "./i18n";
+import { AuthScreen, ProfileCard } from "./Auth";
+import { supabase, useProfile, useSession } from "./supabase";
 import { useUpdater } from "./updater";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
 
@@ -82,19 +84,29 @@ export default function App() {
   const { inputs, outputs, unlock } = useDevices(inCall);
   const updater = useUpdater();
   const upd = updater.state;
+  const authSession = useSession();
+  const [profile, setProfile] = useProfile(authSession?.user.id);
+  // With Supabase configured you sign in and your profile name is used; without it, the stage 0 name field stays.
+  const needsSignIn = supabase !== null && !authSession;
+  const voiceName = profile?.display_name ?? name;
+
+  // Signing out ends the call too.
+  useEffect(() => {
+    if (needsSignIn) void session.leave();
+  }, [needsSignIn, session]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
   const join = () => {
-    if (!name.trim() || !roomName.trim() || !tokenServerId.trim()) {
+    if (!voiceName.trim() || !roomName.trim() || !tokenServerId.trim()) {
       setFormError(true);
       return;
     }
     setFormError(false);
     void session.join({
-      name: name.trim(),
+      name: voiceName.trim(),
       roomName: roomName.trim(),
       tokenServerId: tokenServerId.trim(),
       thresholdDb,
@@ -152,7 +164,9 @@ export default function App() {
         </div>
       )}
 
-      {!inCall && (
+      {needsSignIn && authSession === null && <AuthScreen t={t} lang={lang} />}
+
+      {!needsSignIn && !inCall && (
         <form
           className="card"
           onSubmit={(e) => {
@@ -160,10 +174,12 @@ export default function App() {
             join();
           }}
         >
-          <label>
-            {t.yourName}
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
-          </label>
+          {!supabase && (
+            <label>
+              {t.yourName}
+              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
+            </label>
+          )}
           <label>
             {t.roomName}
             <input value={roomName} onChange={(e) => setRoomName(e.target.value)} maxLength={64} />
@@ -230,6 +246,8 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {profile && <ProfileCard key={profile.id} t={t} profile={profile} onChange={setProfile} />}
 
       <section className="card settings" onPointerEnter={unlock}>
         <label>

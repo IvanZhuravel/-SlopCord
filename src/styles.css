@@ -69,3 +69,11 @@ button.danger { background: var(--danger); }
 .update-banner button.primary { background: var(--text); color: var(--accent); font-weight: 600; }
 .update-banner small, .update-banner .error { color: var(--text); opacity: 0.9; }
 .version-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); }
+
+.tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 6px; padding: 3px; }
+.tabs button { flex: 1; background: transparent; }
+.tabs button.active { background: var(--line); }
+img.avatar { object-fit: cover; }
+.profile-row { display: flex; align-items: flex-end; gap: 12px; }
+.avatar-button { background: none; padding: 0; border-radius: 50%; }
+.grow { flex: 1; }
