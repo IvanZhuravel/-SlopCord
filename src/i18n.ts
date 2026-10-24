@@ -76,6 +76,15 @@ const uk = {
   kick: "Виключити",
   leaveServer: "Вийти з сервера",
   leaveConfirm: "Вийти з сервера «{server}»? Повернутися можна лише за новим запрошенням.",
+  rooms: "Кімнати",
+  newRoom: "Нова кімната",
+  renameRoom: "Нова назва кімнати",
+  roomHint: "Клікни, щоб зайти. Подвійний клік, щоб перейменувати.",
+  deleteRoom: "Видалити кімнату",
+  deleteRoomConfirm: "Видалити кімнату «{room}»?",
+  tooManyRooms: "На сервері вже 20 кімнат",
+  roomFull: "У кімнаті вже 10 людей",
+  errorNoAccess: "Цієї кімнати більше немає або тебе вилучили з сервера",
 };
 
 const en: typeof uk = {
@@ -153,6 +162,15 @@ const en: typeof uk = {
   kick: "Remove",
   leaveServer: "Leave server",
   leaveConfirm: "Leave “{server}”? You can only come back with a new invite.",
+  rooms: "Rooms",
+  newRoom: "New room",
+  renameRoom: "New room name",
+  roomHint: "Click to join. Double-click to rename.",
+  deleteRoom: "Delete room",
+  deleteRoomConfirm: "Delete room “{room}”?",
+  tooManyRooms: "The server already has 20 rooms",
+  roomFull: "The room already has 10 people",
+  errorNoAccess: "This room is gone or you were removed from the server",
 };
 
 export type Strings = typeof uk;

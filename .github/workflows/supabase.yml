@@ -38,6 +38,9 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - name: Skip until the Supabase secrets are added
@@ -51,3 +54,9 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
         run: supabase db push
+      # Voice tokens. The LiveKit key lives only in Supabase function secrets.
+      - name: LiveKit secrets for the token function
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != '' && env.LIVEKIT_API_KEY != ''
+        run: supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" LIVEKIT_URL="$LIVEKIT_URL" LIVEKIT_API_KEY="$LIVEKIT_API_KEY" LIVEKIT_API_SECRET="$LIVEKIT_API_SECRET"
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        run: supabase functions deploy livekit-token --project-ref "$SUPABASE_PROJECT_REF"
