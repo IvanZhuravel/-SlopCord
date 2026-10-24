@@ -96,6 +96,21 @@ const uk = {
   pttNoKey: "Обери клавішу push-to-talk у налаштуваннях, інакше тебе не чути.",
   mouseButton: "Миша",
   volume: "Гучність",
+  joinVoice: "Зайти",
+  olderMessages: "Показати раніші повідомлення",
+  noMessages: "Тут ще ніхто нічого не писав.",
+  messagePlaceholder: "Написати в #{room}",
+  send: "Надіслати",
+  attachImage: "Додати картинку (або встав її з буфера, або перетягни сюди)",
+  image: "картинка",
+  tooManyFiles: "Не більше 4 картинок в одному повідомленні",
+  fileTooBig: "GIF більший за 10 МБ",
+  errorSend: "Не вдалося надіслати. Перевір інтернет.",
+  edited: "змінено",
+  edit: "Змінити",
+  delete: "Видалити",
+  deleteMessageConfirm: "Видалити це повідомлення?",
+  messageDeleted: "Повідомлення видалено",
 };
 
 const en: typeof uk = {
@@ -193,6 +208,21 @@ const en: typeof uk = {
   pttNoKey: "Choose a push-to-talk key in settings, or nobody hears you.",
   mouseButton: "Mouse",
   volume: "Volume",
+  joinVoice: "Join",
+  olderMessages: "Show older messages",
+  noMessages: "Nobody has written here yet.",
+  messagePlaceholder: "Message #{room}",
+  send: "Send",
+  attachImage: "Add a picture (or paste it, or drop it here)",
+  image: "picture",
+  tooManyFiles: "No more than 4 pictures in one message",
+  fileTooBig: "The GIF is larger than 10 MB",
+  errorSend: "Could not send. Check your internet.",
+  edited: "edited",
+  edit: "Edit",
+  delete: "Delete",
+  deleteMessageConfirm: "Delete this message?",
+  messageDeleted: "Message deleted",
 };
 
 export type Strings = typeof uk;
