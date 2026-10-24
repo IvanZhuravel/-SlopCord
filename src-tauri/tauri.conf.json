@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "SlopCord",
-  "version": "0.0.1",
+  "version": "../package.json",
   "identifier": "com.slopcord.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -40,6 +40,17 @@
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA2MEY3MTBFMkE1NDgxRjUKUldUMWdWUXFEbkVQQnNiR3lwRzVVMUpPeHFFNW5IaDY0eGZjN2lVQzVJcm8zN1dPYVNHKzFnbWIK",
+      "endpoints": [
+        "https://github.com/IvanZhuravel/SlopCord/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }
