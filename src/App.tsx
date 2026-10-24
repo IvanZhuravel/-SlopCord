@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { detectLang, strings, type Lang } from "./i18n";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
 
@@ -22,19 +22,40 @@ function usePref<T>(key: string, fallback: T) {
   return [value, setValue] as const;
 }
 
-function useDevices(kind: MediaDeviceKind, refreshKey: unknown) {
+// Windows hides the device list until the app has mic permission, so the
+// pickers ask for it once (on first click) and then re-read the list.
+function useDevices(refreshKey: unknown) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  useEffect(() => {
-    const load = () =>
+  const [unlocked, setUnlocked] = useState(false);
+  const load = useCallback(
+    () =>
       navigator.mediaDevices
         .enumerateDevices()
-        .then((all) => setDevices(all.filter((d) => d.kind === kind && d.deviceId !== "default")))
-        .catch(() => setDevices([]));
+        .then((all) => setDevices(all.filter((d) => d.deviceId && d.deviceId !== "default")))
+        .catch(() => setDevices([])),
+    [],
+  );
+  useEffect(() => {
     load();
     navigator.mediaDevices.addEventListener("devicechange", load);
     return () => navigator.mediaDevices.removeEventListener("devicechange", load);
-  }, [kind, refreshKey]);
-  return devices;
+  }, [load, refreshKey]);
+  const unlock = useCallback(async () => {
+    if (unlocked || devices.some((d) => d.label)) return;
+    setUnlocked(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch {
+      /* no permission: the list stays as Windows gives it */
+    }
+    await load();
+  }, [unlocked, devices, load]);
+  return {
+    inputs: devices.filter((d) => d.kind === "audioinput"),
+    outputs: devices.filter((d) => d.kind === "audiooutput"),
+    unlock,
+  };
 }
 
 export default function App() {
@@ -52,8 +73,7 @@ export default function App() {
   const session = useMemo(() => new VoiceSession(setVoice), []);
   const inCall = voice.status === "connected" || voice.status === "reconnecting";
   // Device labels only appear after mic permission, so re-list once we are in a call.
-  const inputs = useDevices("audioinput", inCall);
-  const outputs = useDevices("audiooutput", inCall);
+  const { inputs, outputs, unlock } = useDevices(inCall);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -172,7 +192,7 @@ export default function App() {
         </section>
       )}
 
-      <section className="card settings">
+      <section className="card settings" onPointerEnter={unlock}>
         <label>
           {t.sensitivity}: {thresholdDb} dB
           <input
@@ -187,7 +207,7 @@ export default function App() {
         </label>
         <label>
           {t.microphone}
-          <select value={inputId} onChange={(e) => onDevice("audioinput", e.target.value)}>
+          <select value={inputId} onFocus={unlock} onChange={(e) => onDevice("audioinput", e.target.value)}>
             <option value="">{t.defaultDevice}</option>
             {inputs.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
@@ -198,7 +218,7 @@ export default function App() {
         </label>
         <label>
           {t.speakers}
-          <select value={outputId} onChange={(e) => onDevice("audiooutput", e.target.value)}>
+          <select value={outputId} onFocus={unlock} onChange={(e) => onDevice("audiooutput", e.target.value)}>
             <option value="">{t.defaultDevice}</option>
             {outputs.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
