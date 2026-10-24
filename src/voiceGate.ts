@@ -1,5 +1,7 @@
 import type { AudioProcessorOptions, Track, TrackProcessor } from "livekit-client";
 
+export type GateMode = "voice" | "ptt";
+
 const WORKLET_URL = "/voice-gate.worklet.js";
 const loadedContexts = new WeakSet<AudioContext>();
 
@@ -15,6 +17,9 @@ export class VoiceGateProcessor implements TrackProcessor<Track.Kind.Audio, Audi
   private source?: MediaStreamAudioSourceNode;
   private node?: AudioWorkletNode;
   private dest?: MediaStreamAudioDestinationNode;
+
+  private mode: GateMode = "voice";
+  private pttDown = false;
 
   constructor(
     private thresholdDb: number,
@@ -35,7 +40,7 @@ export class VoiceGateProcessor implements TrackProcessor<Track.Kind.Audio, Audi
       channelCountMode: "explicit",
     });
     this.node.port.onmessage = (e) => this.onOpenChange(Boolean(e.data.open));
-    this.node.port.postMessage({ thresholdDb: this.thresholdDb });
+    this.node.port.postMessage({ thresholdDb: this.thresholdDb, mode: this.mode, pttDown: this.pttDown });
     this.dest = audioContext.createMediaStreamDestination();
     this.dest.channelCount = 1;
     this.source.connect(this.node).connect(this.dest);
@@ -59,5 +64,16 @@ export class VoiceGateProcessor implements TrackProcessor<Track.Kind.Audio, Audi
   setThreshold(thresholdDb: number) {
     this.thresholdDb = thresholdDb;
     this.node?.port.postMessage({ thresholdDb });
+  }
+
+  setMode(mode: GateMode) {
+    this.mode = mode;
+    this.pttDown = false;
+    this.node?.port.postMessage({ mode, pttDown: false });
+  }
+
+  setPttDown(down: boolean) {
+    this.pttDown = down;
+    this.node?.port.postMessage({ pttDown: down });
   }
 }

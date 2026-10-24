@@ -85,6 +85,17 @@ const uk = {
   tooManyRooms: "На сервері вже 20 кімнат",
   roomFull: "У кімнаті вже 10 людей",
   errorNoAccess: "Цієї кімнати більше немає або тебе вилучили з сервера",
+  voiceMode: "Як тебе чути",
+  voiceActivation: "Голосова активація",
+  pushToTalk: "Push-to-talk",
+  pttDesktopOnly: "Працює лише в застосунку для Windows",
+  pttKey: "Клавіша для розмови",
+  pttChoose: "Обрати клавішу",
+  pttPress: "Натисни клавішу або бічну кнопку миші… (Esc — скасувати)",
+  pttHint: "Тримай її, поки говориш. Гра теж бачить цю клавішу.",
+  pttNoKey: "Обери клавішу push-to-talk у налаштуваннях, інакше тебе не чути.",
+  mouseButton: "Миша",
+  volume: "Гучність",
 };
 
 const en: typeof uk = {
@@ -171,6 +182,17 @@ const en: typeof uk = {
   tooManyRooms: "The server already has 20 rooms",
   roomFull: "The room already has 10 people",
   errorNoAccess: "This room is gone or you were removed from the server",
+  voiceMode: "How you are heard",
+  voiceActivation: "Voice activation",
+  pushToTalk: "Push-to-talk",
+  pttDesktopOnly: "Only works in the Windows app",
+  pttKey: "Talk key",
+  pttChoose: "Choose a key",
+  pttPress: "Press a key or a side mouse button… (Esc to cancel)",
+  pttHint: "Hold it while you talk. The game still sees this key too.",
+  pttNoKey: "Choose a push-to-talk key in settings, or nobody hears you.",
+  mouseButton: "Mouse",
+  volume: "Volume",
 };
 
 export type Strings = typeof uk;

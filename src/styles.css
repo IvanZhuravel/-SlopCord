@@ -99,3 +99,9 @@ button.link:hover { color: var(--danger); }
 .room-people { list-style: none; margin: 2px 0 6px 18px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .room-people li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .room-people li.speaking .avatar { box-shadow: 0 0 0 2px var(--ok); }
+
+/* Voice mode switch and per-friend volume */
+.mode-row { display: flex; gap: 6px; }
+.mode-row button { flex: 1; }
+.mode-row button.active { border-color: var(--accent); background: var(--accent); }
+.peer-volume { width: 90px; margin-left: auto; }

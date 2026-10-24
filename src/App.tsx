@@ -6,7 +6,9 @@ import { JoinServer, ServerCard, useServers } from "./Server";
 import { supabase, useProfile, useSession } from "./supabase";
 import { useUpdater } from "./updater";
 import { TokenSource } from "livekit-client";
+import { capturePttKey, keyName, onPtt, pttAvailable, setPttKey } from "./ptt";
 import { initialVoiceState, VoiceSession, type VoiceState } from "./voice";
+import type { GateMode } from "./voiceGate";
 
 // Small per-device preferences. Losing them is harmless, so storage errors are ignored.
 function usePref<T>(key: string, fallback: T) {
@@ -75,6 +77,12 @@ export default function App() {
   const [savedTokenServerId, setTokenServerId] = usePref("tokenServerId", "");
   const tokenServerId = BUILT_IN_TOKEN_SERVER_ID || savedTokenServerId;
   const [thresholdDb, setThresholdDb] = usePref("thresholdDb", -50);
+  const [savedMode, setMode] = usePref<GateMode>("voiceMode", "voice");
+  const mode: GateMode = pttAvailable ? savedMode : "voice";
+  const [pttKey, setPttKeyPref] = usePref("pttKey", 0);
+  const [pttKeyLabel, setPttKeyLabel] = useState("");
+  const [capturing, setCapturing] = useState(false);
+  const [volumes, setVolumes] = usePref<Record<string, number>>("volumes", {});
   const [inputId, setInputId] = usePref("inputId", "");
   const [outputId, setOutputId] = usePref("outputId", "");
   const [voice, setVoice] = useState<VoiceState>(initialVoiceState);
@@ -128,6 +136,8 @@ export default function App() {
 
   const voiceOptions = {
     thresholdDb,
+    mode,
+    volumes,
     inputDeviceId: inputId || undefined,
     outputDeviceId: outputId || undefined,
   };
@@ -166,6 +176,40 @@ export default function App() {
         : voice.errorDetail === "no_access"
           ? t.errorNoAccess
           : t.errorConnect;
+
+  // The key hook runs only during a call in push-to-talk mode.
+  useEffect(() => {
+    setPttKey(inCall && mode === "ptt" ? pttKey : 0);
+  }, [inCall, mode, pttKey]);
+
+  useEffect(() => {
+    if (!pttAvailable) return;
+    const off = onPtt((down) => session.setPttDown(down));
+    return () => void off.then((unlisten) => unlisten());
+  }, [session]);
+
+  useEffect(() => {
+    session.setMode(mode);
+  }, [session, mode]);
+
+  useEffect(() => {
+    if (pttKey) void keyName(pttKey, t.mouseButton).then(setPttKeyLabel);
+  }, [pttKey, t]);
+
+  const pickPttKey = async () => {
+    setCapturing(true);
+    try {
+      const vk = await capturePttKey();
+      if (vk) setPttKeyPref(vk);
+    } finally {
+      setCapturing(false);
+    }
+  };
+
+  const onVolume = (identity: string, volume: number) => {
+    setVolumes((v) => ({ ...v, [identity]: volume }));
+    session.setPeerVolume(identity, volume);
+  };
 
   const onThreshold = (db: number) => {
     setThresholdDb(db);
@@ -313,11 +357,25 @@ export default function App() {
                   {p.isLocal && <em> ({t.you})</em>}
                 </span>
                 {p.micMuted && <span className="muted-tag">{t.muted}</span>}
+                {!p.isLocal && (
+                  <input
+                    type="range"
+                    className="peer-volume"
+                    aria-label={t.volume}
+                    title={`${t.volume}: ${Math.round((volumes[p.identity] ?? 1) * 100)}%`}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={volumes[p.identity] ?? 1}
+                    onChange={(e) => onVolume(p.identity, Number(e.target.value))}
+                  />
+                )}
               </li>
             ))}
           </ul>
           {voice.peers.length === 1 && <p className="hint">{t.alone}</p>}
 
+          {mode === "ptt" && !pttKey && <p className="warn">{t.pttNoKey}</p>}
           <p className={`tx ${voice.transmitting && !voice.micMuted ? "on" : ""}`}>
             <span className="dot" /> {voice.transmitting && !voice.micMuted ? t.transmitting : t.silent}
           </p>
@@ -339,18 +397,42 @@ export default function App() {
       {profile && <ProfileCard key={profile.id} t={t} profile={profile} onChange={setProfile} />}
 
       <section className="card settings" onPointerEnter={unlock}>
-        <label>
-          {t.sensitivity}: {thresholdDb} dB
-          <input
-            type="range"
-            min={-75}
-            max={-25}
-            step={1}
-            value={thresholdDb}
-            onChange={(e) => onThreshold(Number(e.target.value))}
-          />
-          <small>{t.sensitivityHint}</small>
-        </label>
+        <div className="mode-row" role="radiogroup" aria-label={t.voiceMode}>
+          <button type="button" className={mode === "voice" ? "active" : ""} onClick={() => setMode("voice")}>
+            {t.voiceActivation}
+          </button>
+          <button
+            type="button"
+            className={mode === "ptt" ? "active" : ""}
+            onClick={() => setMode("ptt")}
+            disabled={!pttAvailable}
+            title={pttAvailable ? undefined : t.pttDesktopOnly}
+          >
+            {t.pushToTalk}
+          </button>
+        </div>
+        {mode === "ptt" ? (
+          <label>
+            {t.pttKey}
+            <button type="button" onClick={() => void pickPttKey()} disabled={capturing}>
+              {capturing ? t.pttPress : pttKey ? pttKeyLabel : t.pttChoose}
+            </button>
+            <small>{t.pttHint}</small>
+          </label>
+        ) : (
+          <label>
+            {t.sensitivity}: {thresholdDb} dB
+            <input
+              type="range"
+              min={-75}
+              max={-25}
+              step={1}
+              value={thresholdDb}
+              onChange={(e) => onThreshold(Number(e.target.value))}
+            />
+            <small>{t.sensitivityHint}</small>
+          </label>
+        )}
         <label>
           {t.microphone}
           <select value={inputId} onFocus={unlock} onChange={(e) => onDevice("audioinput", e.target.value)}>
